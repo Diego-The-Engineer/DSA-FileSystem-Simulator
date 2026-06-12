@@ -23,7 +23,7 @@ function App() {
         return;
       }
       try {
-        const response = await fetch('https://virtualos-backend.onrender.com/', {
+        const response = await fetch('https://virtualos-backend.onrender.com/execute', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ command: commandToRun })
