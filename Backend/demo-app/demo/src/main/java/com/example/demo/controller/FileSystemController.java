@@ -12,7 +12,7 @@ import com.example.demo.service.FileSystem;
 
 @RestController
 @RequestMapping("/api/fs")
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class FileSystemController {
 
     @Autowired
