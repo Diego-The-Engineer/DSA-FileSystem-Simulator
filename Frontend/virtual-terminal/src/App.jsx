@@ -23,7 +23,7 @@ function App() {
         return;
       }
       try {
-        const response = await fetch('http://localhost:8080/api/fs/execute', {
+        const response = await fetch('https://virtualos-backend.onrender.com/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ command: commandToRun })
