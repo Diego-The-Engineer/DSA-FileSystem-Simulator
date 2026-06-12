@@ -1,13 +1,16 @@
 package com.example.demo.service;
 
-import com.example.demo.model.DataType;
-import com.example.demo.model.Inode;
-import com.example.demo.model.Block;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.model.Block;
+import com.example.demo.model.DataType;
+import com.example.demo.model.Inode;
 
 @Service
 public class FileSystem {
@@ -171,6 +174,125 @@ public class FileSystem {
                 "tree: displays the tree structure for the file system\n\n" +
                 "ls: list all the directories and files from the current directory\n\n" +
                 "echo [text] > [file name]: writes content in a file\n\n" +
-                "cat: displays the content from a file\n\n";
+                "cat: displays the content from a file\n\n" +
+                "rm -r: remove a file or directory\n\n" + 
+                "mv [file] [destiny]: move a file to another place\n\n" + 
+                "find [file]: find a path from the file destiny";
+    }
+    public String rm(String argument) {
+        boolean recursive = false;
+        String targetName = argument;
+        if (argument.startsWith("-r ")) {
+            recursive = true;
+            targetName = argument.substring(3).trim(); 
+        }
+
+        Map<String, Inode> children = currentDirectory.getChildren();
+        
+        if (!children.containsKey(targetName)) {
+            return "rm: no se puede borrar '" + targetName + "': No existe el archivo o directorio";
+        }
+
+        Inode target = children.get(targetName);
+        if (target.getType() == DataType.DIRECTORY) {
+            if (!recursive) {
+                return "rm: no se puede borrar '" + targetName + "': Es un directorio (usa rm -r)";
+            }
+            deleteNode(target);
+            children.remove(targetName);
+            return "Directorio '" + targetName + "' y todo su contenido eliminado.";
+        } else {
+            deleteNode(target);
+            children.remove(targetName);
+            return "Archivo '" + targetName + "' eliminado.";
+        }
+    }
+    private void deleteNode(Inode node) {
+        if (node.getType() == DataType.DIRECTORY) {
+            List<Inode> childrenList = new ArrayList<>(node.getChildren().values());
+            for (Inode child : childrenList) {
+                deleteNode(child);
+            }
+            node.getChildren().clear();
+        } else {
+            for (int blockId : node.getBlockId()) {
+                Block block = disk.get(blockId);
+                block.setData(null); 
+                
+            }
+            node.getBlockId().clear();
+        }
+    }
+
+    public String mv(String argument) {
+        String[] parts = argument.split(" ");
+        if (parts.length != 2) {
+            return "mv: sintaxis incorrect. Use: mv <origin> <destiny>";
+        }
+
+        String sourceName = parts[0];
+        String destName = parts[1];
+
+        Map<String, Inode> children = currentDirectory.getChildren();
+        if (!children.containsKey(sourceName)) {
+            return "mv: can not moved '" + sourceName + "': not exist";
+        }
+
+        Inode sourceNode = children.get(sourceName);
+        if (children.containsKey(destName) && children.get(destName).getType() == DataType.DIRECTORY) {
+            Inode destDir = children.get(destName);
+            children.remove(sourceName);
+            sourceNode.setParent(destDir);
+            destDir.getChildren().put(sourceName, sourceNode);
+            
+            return "Moved '" + sourceName + "' to '" + destName + "/'";
+        } 
+        else if (!children.containsKey(destName)) {
+            children.remove(sourceName);
+            sourceNode.setName(destName); 
+            children.put(destName, sourceNode);
+            
+            return "Renamed '" + sourceName + "' to '" + destName + "'";
+        } 
+        else {
+            return "mv: destiny '" + destName + "' already exist.";
+        }
+    }
+    public String find(String targetName) {
+        Queue<Inode> queue = new LinkedList<>();
+        queue.add(currentDirectory);
+        
+        StringBuilder results = new StringBuilder();
+        while (!queue.isEmpty()) {
+            Inode current = queue.poll(); 
+
+            if (current.getName() != null && current.getName().equals(targetName)) {
+                results.append(getFullPath(current)).append("\n");
+            }
+            
+            
+            if (current.getType() == DataType.DIRECTORY) {
+                queue.addAll(current.getChildren().values());
+            }
+        }
+        
+        if (results.length() == 0) {
+            return "find: Not results to: '" + targetName + "'";
+        }
+        
+        return results.toString().trim();
+    }
+
+    private String getFullPath(Inode node) {
+        if (node.getParent() == null) return "/"; 
+        
+        List<String> pathParts = new ArrayList<>();
+        Inode temp = node;
+        while (temp.getParent() != null) {
+            pathParts.add(0, temp.getName()); 
+            temp = temp.getParent();
+        }
+        
+        return "/" + String.join("/", pathParts);
     }
 }
