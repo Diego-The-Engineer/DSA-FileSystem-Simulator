@@ -6,6 +6,7 @@ Enlaces del Proyecto
 
 * **Live Demo (Frontend):** [https://diego-virtual-linux.vercel.app/](https://diego-virtual-linux.vercel.app/)
 * **Servidor API (Backend):** [https://virtualos-backend.onrender.com/](https://virtualos-backend.onrender.com/)
+* AVISO IMPORTANTE: Al ser desplegado con servicios gratuitos, si en un periodo de 15 minutos nadie ha usado el servicio de la página, la respuesta de comunicación de la API puede tardar un poco, aproximadamente 1 minuto.
 
 ---
 
